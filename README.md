@@ -14,7 +14,7 @@ A self-hosted .NET 9 worker that watches the NHL data feed and runs a lighting s
 | WLED / ESPHome | Planned |
 | Govee | Planned |
 
-Any NHL team works today via config — but the celebration colors are currently the Montréal Canadiens' bleu-blanc-rouge. Re-skinning for your team is a small code edit; see [Customizing the celebration](#customizing-the-celebration).
+Any NHL team works today via config. Set `Nhl__TeamAbbrev` to your team's abbreviation and the worker loads the matching preset from `celebrations.json` (colors, team name, chant). Several teams are bundled out of the box; add or edit your own without recompiling. See [Customizing the celebration](#customizing-the-celebration).
 
 ## How it works
 
@@ -60,7 +60,7 @@ When your team scores:
 
 ```
 Goal: MTL 1→2.
-🚨 ET LE BUT! Flashing green, then rotating bleu-blanc-rouge.
+🚨 GOAAAAAL! Canadiens scored — flashing signal, then team colors.
 ```
 
 The container restarts automatically on system reboot (`restart: unless-stopped` in `docker-compose.yml`) as long as Docker itself auto-starts.
@@ -84,6 +84,8 @@ All values can be set via `appsettings.json` or env vars (`Section__Key=value`).
 | `App:RestoreAfterSequence` | `null` | Bulb state to restore to after a sequence. Null = turn off. |
 | `App:DataDirectory` | `./data` | Where `play-state.json` is written. |
 
+Per-team celebration colors and chants live in `celebrations.json` — see [Customizing the celebration](#customizing-the-celebration) below.
+
 To restore to warm white at moderate brightness after a celebration:
 
 ```json
@@ -94,19 +96,44 @@ To restore to warm white at moderate brightness after a celebration:
 
 ## Customizing the celebration
 
-The current goal sequence is:
+The goal sequence is:
 
-1. **5 seconds** flashing green (signals the score change before colors start).
-2. **5 seconds** rotating red → white → blue (Habs colors).
-3. **`HoldFinalColorMs`** holding solid red.
-4. Fade to your `RestoreAfterSequence` state (or off).
+1. **5 seconds** flashing `GoalSignalColor` (default green) — signals the score change before team colors start.
+2. **5 seconds** rotating through `Colors` — the array can be 1+ entries; the worker just cycles.
+3. **`Hue:HoldFinalColorMs`** holding `Colors[0]` solid.
+4. Fade to your `App:RestoreAfterSequence` state (or off).
 
-To change colors for your team, edit `src/NhlGoalLight.Hue/HueLightState.cs` — the `HabsRed`, `HabsWhite`, `HabsBlue` static states are CIE xy color coordinates. A few options:
+### celebrations.json
 
-- Use the Hue Color Picker (e.g., [https://hueapi.colorhexa.com](https://hueapi.colorhexa.com)) to get xy values for your hex codes.
-- Or switch to `Hue`/`Sat` instead of `Xy` to let the bulb do gamut mapping — the existing `GoalGreen` is an example (`Hue=25500, Sat=254`).
+Per-team presets live in `src/NhlGoalLight.Worker/celebrations.json`, bundled into the image. Keys are NHL team abbreviations; entries are picked by matching `Nhl:TeamAbbrev`. **All 32 NHL teams are included.** If the configured team has no entry (or the abbrev is wrong), `Default` is used.
 
-The phase durations live in `src/NhlGoalLight.Hue/HueGoalLight.cs`. The cadence inside each phase respects `Hue:FlashIntervalMs`.
+```json
+{
+  "Celebrations": {
+    "TOR": {
+      "TeamName": "Maple Leafs",
+      "Colors": ["#00205B", "#FFFFFF"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 GO LEAFS GO!"
+    }
+  }
+}
+```
+
+### Adding your team
+
+Two options:
+
+- **Edit `celebrations.json` in the repo** and rebuild the image.
+- **Mount your own file** at `/app/celebrations.json` in `docker-compose.yml` (commented mount is provided). Hot-reloaded on file change — no container restart needed.
+
+### How colors render
+
+Colors are converted to Hue's hue/saturation internally (not CIE xy) so the bulb does its own gamut mapping — looks correct on gamut-B, gamut-C, and white-ambiance bulbs without per-hardware tweaking. Pure whites and grays use the D65 xy white point automatically.
+
+> ⚠️ **Avoid `#000000`** in `Colors` — pure black has no hue, so the converter falls back to white (the same code path as `#FFFFFF`). Bundled teams whose brand pairs a primary color with black (Bruins, Sens, Penguins, etc.) just drop the black and rotate the remaining colors.
+
+The phase durations are still in code (`src/NhlGoalLight.Hue/HueGoalLight.cs`); the per-flash cadence respects `Hue:FlashIntervalMs`.
 
 ## Preview the lights
 
@@ -135,12 +162,14 @@ docker-compose.yml
 .env.example
 data/                                  Runtime state (volume mount target)
 docs/setup-philips-hue.md
+src/NhlGoalLight.Worker/celebrations.json  Per-team color/chant presets (mountable)
 src/
-├── NhlGoalLight.Abstractions/         IGoalLight contract + AppOptions
+├── NhlGoalLight.Abstractions/         IGoalLight contract + AppOptions + CelebrationOptions
 ├── NhlGoalLight.Nhl/                  Schedule + landing HTTP, ETag conditionals, NhlOptions
 ├── NhlGoalLight.Hue/                  Philips Hue (Local CLIP API v1) integration
 │   ├── HueClient.cs                   Bridge HTTP
-│   ├── HueLightState.cs               Color payload + team color constants
+│   ├── HueLightState.cs               Color payload (Beige + Off constants)
+│   ├── HueColor.cs                    Hex → HueLightState conversion
 │   ├── HueGoalLight.cs                IGoalLight implementation (celebration choreography)
 │   └── HueOptions.cs
 └── NhlGoalLight.Worker/               Composition root

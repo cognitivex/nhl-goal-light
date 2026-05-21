@@ -15,6 +15,8 @@ services:
       - Hue__LightIds__0=${HUE_LIGHT_1}
       - Hue__LightIds__1=${HUE_LIGHT_2}
       # --- NHL ---
+      # Sets both which team to watch AND which celebration preset to load
+      # from celebrations.json (Celebrations:{TeamAbbrev}, falls back to Default).
       - Nhl__TeamAbbrev=MTL
       - Nhl__UserAgent=${NHL_USER_AGENT:-NhlGoalLight/1.0}
       # --- App ---
@@ -22,3 +24,6 @@ services:
       - App__EnableOpponentGoalDimRed=true
     volumes:
       - ./data:/app/data
+      # Optional: mount a custom celebrations file to override the bundled presets
+      # (or to add a team not in the default set). Hot-reloaded on file change.
+      # - ./celebrations.json:/app/celebrations.json:ro

@@ -1,0 +1,202 @@
+{
+  "Celebrations": {
+    "Default": {
+      "TeamName": "your team",
+      "Colors": ["#FFFFFF"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 GOAAAAAL!"
+    },
+    "ANA": {
+      "TeamName": "Ducks",
+      "Colors": ["#F47A38", "#B9975B"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 LET'S GO DUCKS!"
+    },
+    "BOS": {
+      "TeamName": "Bruins",
+      "Colors": ["#FFB81C"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 BRUINS GOAL!"
+    },
+    "BUF": {
+      "TeamName": "Sabres",
+      "Colors": ["#003087", "#FFB81C"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 LET'S GO BUFFALO!"
+    },
+    "CAR": {
+      "TeamName": "Hurricanes",
+      "Colors": ["#CC0000"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 CANES GOAL!"
+    },
+    "CBJ": {
+      "TeamName": "Blue Jackets",
+      "Colors": ["#002654", "#CE1126", "#FFFFFF"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 C-B-J!"
+    },
+    "CGY": {
+      "TeamName": "Flames",
+      "Colors": ["#C8102E", "#F1BE48", "#FFFFFF"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 C OF RED!"
+    },
+    "CHI": {
+      "TeamName": "Blackhawks",
+      "Colors": ["#CF0A2C"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 HAWKS GOAL!"
+    },
+    "COL": {
+      "TeamName": "Avalanche",
+      "Colors": ["#6F263D", "#236192"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 GO AVS GO!"
+    },
+    "DAL": {
+      "TeamName": "Stars",
+      "Colors": ["#006847"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 STARS GOAL!"
+    },
+    "DET": {
+      "TeamName": "Red Wings",
+      "Colors": ["#C8102E", "#FFFFFF"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 WINGS GOAL!"
+    },
+    "EDM": {
+      "TeamName": "Oilers",
+      "Colors": ["#FC4C02", "#041E42"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 OILERS GOAL!"
+    },
+    "FLA": {
+      "TeamName": "Panthers",
+      "Colors": ["#C8102E", "#041E42", "#B9975B"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 CATS GOAL!"
+    },
+    "LAK": {
+      "TeamName": "Kings",
+      "Colors": ["#582C83", "#FCB514"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 GO KINGS GO!"
+    },
+    "MIN": {
+      "TeamName": "Wild",
+      "Colors": ["#154734", "#A6192E", "#DDCBA4"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 LET'S GO WILD!"
+    },
+    "MTL": {
+      "TeamName": "Canadiens",
+      "Colors": ["#AF1E2D", "#FFFFFF", "#192168"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 ET LE BUT!"
+    },
+    "NJD": {
+      "TeamName": "Devils",
+      "Colors": ["#CE1126", "#FFFFFF"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 DEVILS SCORE!"
+    },
+    "NSH": {
+      "TeamName": "Predators",
+      "Colors": ["#FFB81C", "#041E42"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 PREDS GOAL!"
+    },
+    "NYI": {
+      "TeamName": "Islanders",
+      "Colors": ["#00539B", "#F47D30"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 ISLES GOAL!"
+    },
+    "NYR": {
+      "TeamName": "Rangers",
+      "Colors": ["#0038A8", "#CE1126", "#FFFFFF"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 LET'S GO RANGERS!"
+    },
+    "OTT": {
+      "TeamName": "Senators",
+      "Colors": ["#C8102E", "#C2912C"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 GO SENS GO!"
+    },
+    "PHI": {
+      "TeamName": "Flyers",
+      "Colors": ["#F74902"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 FLYERS GOAL!"
+    },
+    "PIT": {
+      "TeamName": "Penguins",
+      "Colors": ["#FCB514", "#FFFFFF"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 LET'S GO PENS!"
+    },
+    "SEA": {
+      "TeamName": "Kraken",
+      "Colors": ["#001628", "#99D9D9", "#E9072B"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 RELEASE THE KRAKEN!"
+    },
+    "SJS": {
+      "TeamName": "Sharks",
+      "Colors": ["#006D75", "#E57200"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 SHARKS GOAL!"
+    },
+    "STL": {
+      "TeamName": "Blues",
+      "Colors": ["#002F87", "#FCB514", "#041E42"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 LET'S GO BLUES!"
+    },
+    "TBL": {
+      "TeamName": "Lightning",
+      "Colors": ["#00205B", "#FFFFFF"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 LIGHTNING STRIKE!"
+    },
+    "TOR": {
+      "TeamName": "Maple Leafs",
+      "Colors": ["#00205B", "#FFFFFF"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 GO LEAFS GO!"
+    },
+    "UTA": {
+      "TeamName": "Mammoth",
+      "Colors": ["#71AFE5"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 MAMMOTH GOAL!"
+    },
+    "VAN": {
+      "TeamName": "Canucks",
+      "Colors": ["#00205B", "#00843D", "#FFFFFF"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 GO CANUCKS GO!"
+    },
+    "VGK": {
+      "TeamName": "Golden Knights",
+      "Colors": ["#B4975A", "#C8102E"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 KNIGHTS GOAL!"
+    },
+    "WPG": {
+      "TeamName": "Jets",
+      "Colors": ["#041E42", "#AC162C", "#FFFFFF"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 GO JETS GO!"
+    },
+    "WSH": {
+      "TeamName": "Capitals",
+      "Colors": ["#C8102E", "#041E42", "#FFFFFF"],
+      "GoalSignalColor": "#00FF00",
+      "GoalChant": "🚨 CAPS GOAL!"
+    }
+  }
+}

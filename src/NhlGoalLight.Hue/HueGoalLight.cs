@@ -4,54 +4,75 @@ using NhlGoalLight.Abstractions;
 
 namespace NhlGoalLight.Hue;
 
-public sealed class HueGoalLight(
-    HueClient hue,
-    IOptions<HueOptions> hueOpts,
-    IOptions<AppOptions> appOpts,
-    ILogger<HueGoalLight> logger) : IGoalLight
+public sealed class HueGoalLight : IGoalLight
 {
-    private readonly HueOptions _hueOpts = hueOpts.Value;
-    private readonly AppOptions _appOpts = appOpts.Value;
+    private readonly HueClient _hue;
+    private readonly HueOptions _hueOpts;
+    private readonly AppOptions _appOpts;
+    private readonly CelebrationOptions _celebration;
+    private readonly ILogger<HueGoalLight> _logger;
+
+    // Precomputed at construction so we don't re-parse hex on every flash.
+    private readonly HueLightState _goalSignal;
+    private readonly HueLightState[] _teamColors;
 
     // Re-entrancy guard. If a sequence is already running (rare: two goals
     // surfaced in adjacent polls), skip the new trigger rather than overlap.
     private int _running;
 
+    public HueGoalLight(
+        HueClient hue,
+        IOptions<HueOptions> hueOpts,
+        IOptions<AppOptions> appOpts,
+        IOptions<CelebrationOptions> celebrationOpts,
+        ILogger<HueGoalLight> logger)
+    {
+        _hue = hue;
+        _hueOpts = hueOpts.Value;
+        _appOpts = appOpts.Value;
+        _celebration = celebrationOpts.Value;
+        _logger = logger;
+
+        _goalSignal = HueColor.FromHex(_celebration.GoalSignalColor);
+        _teamColors = _celebration.Colors.Select(HueColor.FromHex).ToArray();
+    }
+
     public async Task PlayOurGoalAsync(CancellationToken ct)
     {
         if (Interlocked.Exchange(ref _running, 1) == 1)
         {
-            logger.LogInformation("Sequence already running; skipping new goal trigger.");
+            _logger.LogInformation("Sequence already running; skipping new goal trigger.");
             return;
         }
         try
         {
-            logger.LogInformation("🚨 ET LE BUT! Flashing green, then rotating bleu-blanc-rouge.");
+            _logger.LogInformation("{Chant} {Team} scored — flashing signal, then team colors.",
+                _celebration.GoalChant, _celebration.TeamName);
             var phase = TimeSpan.FromSeconds(5);
             var interval = TimeSpan.FromMilliseconds(_hueOpts.FlashIntervalMs);
 
-            // Phase 1: flashing green (green ↔ off) for 5 seconds.
+            // Phase 1: flashing goal-signal color (on ↔ off) for 5 seconds.
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            var green = true;
+            var on = true;
             while (sw.Elapsed < phase)
             {
-                await hue.SetAllAsync(green ? HueLightState.GoalGreen : HueLightState.Off, ct).ConfigureAwait(false);
+                await _hue.SetAllAsync(on ? _goalSignal : HueLightState.Off, ct).ConfigureAwait(false);
                 await Task.Delay(interval, ct).ConfigureAwait(false);
-                green = !green;
+                on = !on;
             }
 
-            // Phase 2: rotate red → white → blue for another 5 seconds.
-            var cycle = new[] { HueLightState.HabsRed, HueLightState.HabsWhite, HueLightState.HabsBlue };
+            // Phase 2: rotate through team colors for another 5 seconds.
             sw.Restart();
             var step = 0;
             while (sw.Elapsed < phase)
             {
-                await hue.SetAllAsync(cycle[step % cycle.Length], ct).ConfigureAwait(false);
+                await _hue.SetAllAsync(_teamColors[step % _teamColors.Length], ct).ConfigureAwait(false);
                 await Task.Delay(interval, ct).ConfigureAwait(false);
                 step++;
             }
 
-            await hue.SetAllAsync(HueLightState.HabsRed, ct).ConfigureAwait(false);
+            // Hold the first (primary) team color, then restore.
+            await _hue.SetAllAsync(_teamColors[0], ct).ConfigureAwait(false);
             await Task.Delay(_hueOpts.HoldFinalColorMs, ct).ConfigureAwait(false);
             await RestoreAsync(ct).ConfigureAwait(false);
         }
@@ -61,7 +82,7 @@ public sealed class HueGoalLight(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Goal sequence failed.");
+            _logger.LogError(ex, "Goal sequence failed.");
         }
         finally
         {
@@ -75,13 +96,13 @@ public sealed class HueGoalLight(
         if (Interlocked.Exchange(ref _running, 1) == 1) return;
         try
         {
-            logger.LogInformation("Opponent scored. Flashing a profoundly uninteresting beige.");
+            _logger.LogInformation("Opponent scored. Flashing a profoundly uninteresting beige.");
             var interval = TimeSpan.FromMilliseconds(_hueOpts.FlashIntervalMs);
             var sw = System.Diagnostics.Stopwatch.StartNew();
             var on = true;
             while (sw.Elapsed < TimeSpan.FromSeconds(5))
             {
-                await hue.SetAllAsync(on ? HueLightState.Beige : HueLightState.Off, ct).ConfigureAwait(false);
+                await _hue.SetAllAsync(on ? HueLightState.Beige : HueLightState.Off, ct).ConfigureAwait(false);
                 await Task.Delay(interval, ct).ConfigureAwait(false);
                 on = !on;
             }
@@ -90,7 +111,7 @@ public sealed class HueGoalLight(
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Opponent goal sequence failed.");
+            _logger.LogError(ex, "Opponent goal sequence failed.");
         }
         finally
         {
@@ -110,6 +131,6 @@ public sealed class HueGoalLight(
                 Ct = restore.ColorTemp,
                 TransitionTime = 10,
             };
-        return hue.SetAllAsync(state, ct);
+        return _hue.SetAllAsync(state, ct);
     }
 }

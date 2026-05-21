@@ -1,0 +1,41 @@
+// Dev container config for projects that run on the devcontainer-runner VM.
+// Pulled into new projects with:
+//   npx degit --mode=git cogx-sol/devcontainer-config .devcontainer
+//
+// Requires `devcontainer-runner-base:latest` to be built on the host. See
+// the devcontainer-runner project in cogx-sol/homelab for build instructions.
+{
+  "name": "${localWorkspaceFolderBasename}",
+  "image": "devcontainer-runner-base:latest",
+
+  "remoteUser": "node",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached",
+
+  // Project-scoped ruflo memory + Claude config. Each project gets its own
+  // named volume so memory doesn't bleed across repos.
+  "mounts": [
+    "source=ruflo-memory-${localWorkspaceFolderBasename},target=/home/node/.agentdb,type=volume",
+    "source=claude-config-${localWorkspaceFolderBasename},target=/home/node/.claude,type=volume"
+  ],
+
+  // Pass through credentials from the host if you'd rather centralize them.
+  // Otherwise omit and run `claude login` / `gh auth login` inside once.
+  // "remoteEnv": {
+  //   "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
+  // },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "ms-azuretools.vscode-docker",
+        "github.vscode-pull-request-github"
+      ]
+    }
+  },
+
+  // First-time setup hook. Add `npm install`, `pip install -r requirements.txt`,
+  // etc. for the project here.
+  "postCreateCommand": "claude --version && ruflo --version || true"
+}

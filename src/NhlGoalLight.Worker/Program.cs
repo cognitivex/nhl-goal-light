@@ -33,12 +33,30 @@ return;
 
 static void ConfigureServices(HostApplicationBuilder builder)
 {
+    // Team-preset library: dictionary of celebrations keyed by team abbreviation.
+    // Bundled in the image; users can mount their own at /app/celebrations.json
+    // to override. reloadOnChange picks up edits without restarting.
+    builder.Configuration.AddJsonFile("celebrations.json", optional: false, reloadOnChange: true);
+
     // Environment variables override appsettings — keeps secrets out of files.
     builder.Configuration.AddEnvironmentVariables();
 
     builder.Services
         .AddOptions<AppOptions>()
         .Bind(builder.Configuration.GetSection("App"))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
+
+    // Resolve the active celebration: Celebrations:{TeamAbbrev}, falling back
+    // to Celebrations:Default if the team has no preset.
+    var teamAbbrev = builder.Configuration["Nhl:TeamAbbrev"] ?? "MTL";
+    var celebrationSection = builder.Configuration.GetSection($"Celebrations:{teamAbbrev}");
+    if (!celebrationSection.Exists())
+        celebrationSection = builder.Configuration.GetSection("Celebrations:Default");
+
+    builder.Services
+        .AddOptions<CelebrationOptions>()
+        .Bind(celebrationSection)
         .ValidateDataAnnotations()
         .ValidateOnStart();
 
