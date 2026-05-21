@@ -1,0 +1,22 @@
+services:
+  nhl-goal-light:
+    build: ./src/NhlGoalLight.Worker
+    container_name: nhl-goal-light
+    restart: unless-stopped
+    environment:
+      - TZ=America/Moncton
+      - DOTNET_ENVIRONMENT=Production
+      # --- Hue ---
+      - Hue__BridgeIp=${HUE_BRIDGE_IP}
+      - Hue__ApiUser=${HUE_API_USER}
+      # Array binding: each element on its own indexed key.
+      - Hue__LightIds__0=${HUE_LIGHT_1}
+      - Hue__LightIds__1=${HUE_LIGHT_2}
+      # --- NHL ---
+      - Nhl__TeamAbbrev=MTL
+      - Nhl__UserAgent=${NHL_USER_AGENT:-NhlGoalLight/1.0}
+      # --- App ---
+      - App__DataDirectory=/app/data
+      - App__EnableOpponentGoalDimRed=true
+    volumes:
+      - ./data:/app/data
