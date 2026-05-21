@@ -9,6 +9,7 @@ public sealed class GoalLightService(
     NhlClient nhl,
     IGoalLight goalLight,
     PlayStateStore stateStore,
+    GoalDetector detector,
     IOptions<NhlOptions> nhlOpts,
     ILogger<GoalLightService> logger) : BackgroundService
 {
@@ -110,67 +111,42 @@ public sealed class GoalLightService(
 
     private async Task<PlayState> ProcessScoreAsync(LandingResponse landing, PlayState state, CancellationToken ct)
     {
-        var teamAbbrev = _opts.TeamAbbrev;
-        var ourIsHome = landing.HomeTeam.Abbrev == teamAbbrev;
-        var ourIsAway = landing.AwayTeam.Abbrev == teamAbbrev;
+        var result = detector.Detect(landing, state, _opts.TeamAbbrev);
 
-        if (!ourIsHome && !ourIsAway)
+        if (result.TeamNotInGame)
         {
-            logger.LogWarning("Game {GameId} doesn't involve {Team}; bailing.", landing.Id, teamAbbrev);
+            logger.LogWarning("Game {GameId} doesn't involve {Team}; bailing.", landing.Id, _opts.TeamAbbrev);
             return state;
         }
 
-        // First contact: baseline at the current scores so we don't retroactively
-        // celebrate goals from before we started watching.
-        if (!state.Initialized)
+        if (result.JustInitialized)
         {
-            var initialized = state with
-            {
-                HomeScore = landing.HomeTeam.Score,
-                AwayScore = landing.AwayTeam.Score,
-                Initialized = true,
-            };
-
             logger.LogInformation(
                 "Game {GameId} initialized; baselining at {Home}-{Away} ({State}).",
                 landing.Id, landing.HomeTeam.Score, landing.AwayTeam.Score, landing.GameState);
-
-            await stateStore.SaveAsync(initialized, ct).ConfigureAwait(false);
-            return initialized;
+            await stateStore.SaveAsync(result.NewState, ct).ConfigureAwait(false);
+            return result.NewState;
         }
 
-        var homeDelta = landing.HomeTeam.Score - state.HomeScore;
-        var awayDelta = landing.AwayTeam.Score - state.AwayScore;
+        FireGoalLight(result.HomeGoal, ct);
+        FireGoalLight(result.AwayGoal, ct);
 
-        // Positive delta = goal. Negative delta = overturn on review; just rebaseline.
-        if (homeDelta > 0)
+        if (result.NewState != state)
         {
-            logger.LogInformation("Goal: {Abbrev} {Old}→{New}.",
-                landing.HomeTeam.Abbrev, state.HomeScore, landing.HomeTeam.Score);
-            // Fire-and-forget so polling isn't blocked on the 20s+ light show.
-            // The IGoalLight implementation has its own re-entrancy guard.
-            if (ourIsHome) _ = Task.Run(() => goalLight.PlayOurGoalAsync(ct), ct);
-            else           _ = Task.Run(() => goalLight.PlayOpponentGoalAsync(ct), ct);
-        }
-        if (awayDelta > 0)
-        {
-            logger.LogInformation("Goal: {Abbrev} {Old}→{New}.",
-                landing.AwayTeam.Abbrev, state.AwayScore, landing.AwayTeam.Score);
-            if (ourIsAway) _ = Task.Run(() => goalLight.PlayOurGoalAsync(ct), ct);
-            else           _ = Task.Run(() => goalLight.PlayOpponentGoalAsync(ct), ct);
-        }
-
-        if (homeDelta != 0 || awayDelta != 0)
-        {
-            var newState = state with
-            {
-                HomeScore = landing.HomeTeam.Score,
-                AwayScore = landing.AwayTeam.Score,
-            };
-            await stateStore.SaveAsync(newState, ct).ConfigureAwait(false);
-            return newState;
+            await stateStore.SaveAsync(result.NewState, ct).ConfigureAwait(false);
+            return result.NewState;
         }
 
         return state;
+    }
+
+    private void FireGoalLight(GoalEvent? goal, CancellationToken ct)
+    {
+        if (goal is null) return;
+        logger.LogInformation("Goal: {Abbrev} {Old}→{New}.", goal.Abbrev, goal.OldScore, goal.NewScore);
+        // Fire-and-forget so polling isn't blocked on the 20s+ light show.
+        // The IGoalLight implementation has its own re-entrancy guard.
+        if (goal.IsOurTeam) _ = Task.Run(() => goalLight.PlayOurGoalAsync(ct), ct);
+        else                _ = Task.Run(() => goalLight.PlayOpponentGoalAsync(ct), ct);
     }
 }

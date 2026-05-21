@@ -64,5 +64,6 @@ static void ConfigureServices(HostApplicationBuilder builder)
     builder.Services.AddHueGoalLight(builder.Configuration);
 
     builder.Services.AddSingleton<PlayStateStore>();
+    builder.Services.AddSingleton<GoalDetector>();
     builder.Services.AddHostedService<GoalLightService>();
 }
