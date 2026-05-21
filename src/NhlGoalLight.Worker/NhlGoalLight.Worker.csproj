@@ -13,9 +13,13 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NhlGoalLight.Abstractions\NhlGoalLight.Abstractions.csproj" />
+    <ProjectReference Include="..\NhlGoalLight.Nhl\NhlGoalLight.Nhl.csproj" />
+    <ProjectReference Include="..\NhlGoalLight.Hue\NhlGoalLight.Hue.csproj" />
   </ItemGroup>
 
   <ItemGroup>

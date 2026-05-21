@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Options;
-using NhlGoalLight.Worker.Configuration;
+using NhlGoalLight.Abstractions;
 
 namespace NhlGoalLight.Worker.State;
 

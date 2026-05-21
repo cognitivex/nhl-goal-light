@@ -1,11 +1,21 @@
 # syntax=docker/dockerfile:1.7
+#
+# Build context is the repo root (see docker-compose.yml) so this Dockerfile
+# can see all four projects in src/.
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
-COPY *.csproj ./
-RUN dotnet restore
-COPY . ./
-RUN dotnet publish -c Release -o /app --no-restore
+
+# Copy csproj files first so the restore layer caches independently of source.
+COPY NhlGoalLight.sln ./
+COPY src/NhlGoalLight.Abstractions/NhlGoalLight.Abstractions.csproj ./src/NhlGoalLight.Abstractions/
+COPY src/NhlGoalLight.Nhl/NhlGoalLight.Nhl.csproj ./src/NhlGoalLight.Nhl/
+COPY src/NhlGoalLight.Hue/NhlGoalLight.Hue.csproj ./src/NhlGoalLight.Hue/
+COPY src/NhlGoalLight.Worker/NhlGoalLight.Worker.csproj ./src/NhlGoalLight.Worker/
+RUN dotnet restore src/NhlGoalLight.Worker/NhlGoalLight.Worker.csproj
+
+COPY src/ ./src/
+RUN dotnet publish src/NhlGoalLight.Worker/NhlGoalLight.Worker.csproj -c Release -o /app --no-restore
 
 FROM mcr.microsoft.com/dotnet/runtime:9.0-alpine
 WORKDIR /app

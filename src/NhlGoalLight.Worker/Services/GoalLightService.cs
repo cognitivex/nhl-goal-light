@@ -1,13 +1,13 @@
 using Microsoft.Extensions.Options;
-using NhlGoalLight.Worker.Configuration;
-using NhlGoalLight.Worker.Models;
+using NhlGoalLight.Abstractions;
+using NhlGoalLight.Nhl;
 using NhlGoalLight.Worker.State;
 
 namespace NhlGoalLight.Worker.Services;
 
 public sealed class GoalLightService(
     NhlClient nhl,
-    LightSequencer sequencer,
+    IGoalLight goalLight,
     PlayStateStore stateStore,
     IOptions<NhlOptions> nhlOpts,
     ILogger<GoalLightService> logger) : BackgroundService
@@ -148,16 +148,16 @@ public sealed class GoalLightService(
             logger.LogInformation("Goal: {Abbrev} {Old}→{New}.",
                 landing.HomeTeam.Abbrev, state.HomeScore, landing.HomeTeam.Score);
             // Fire-and-forget so polling isn't blocked on the 20s+ light show.
-            // The sequencer has its own re-entrancy guard.
-            if (ourIsHome) _ = Task.Run(() => sequencer.PlayHabsGoalAsync(ct), ct);
-            else           _ = Task.Run(() => sequencer.PlayOpponentGoalAsync(ct), ct);
+            // The IGoalLight implementation has its own re-entrancy guard.
+            if (ourIsHome) _ = Task.Run(() => goalLight.PlayOurGoalAsync(ct), ct);
+            else           _ = Task.Run(() => goalLight.PlayOpponentGoalAsync(ct), ct);
         }
         if (awayDelta > 0)
         {
             logger.LogInformation("Goal: {Abbrev} {Old}→{New}.",
                 landing.AwayTeam.Abbrev, state.AwayScore, landing.AwayTeam.Score);
-            if (ourIsAway) _ = Task.Run(() => sequencer.PlayHabsGoalAsync(ct), ct);
-            else           _ = Task.Run(() => sequencer.PlayOpponentGoalAsync(ct), ct);
+            if (ourIsAway) _ = Task.Run(() => goalLight.PlayOurGoalAsync(ct), ct);
+            else           _ = Task.Run(() => goalLight.PlayOpponentGoalAsync(ct), ct);
         }
 
         if (homeDelta != 0 || awayDelta != 0)

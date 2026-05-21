@@ -34,52 +34,7 @@ Goal reversals (on-ice review overturning a goal) are handled — if the score g
 
 ## One-time Hue setup
 
-The Hue local API uses a 40-char "username" you have to mint by pressing the bridge's physical button. One-time only.
-
-### 1. Find the bridge IP
-
-```bash
-# Cloud discovery returns bridges on your NAT — easiest path.
-curl https://discovery.meethue.com
-# Or check your router's DHCP table for the Philips device.
-```
-
-### 2. Pair (button press)
-
-Walk to the bridge, press the round link button on top. You have ~30 seconds. Then:
-
-```bash
-curl -X POST http://<BRIDGE_IP>/api \
-  -H 'Content-Type: application/json' \
-  -d '{"devicetype":"nhl-goal-light#worker"}'
-```
-
-Response on success:
-
-```json
-[{"success":{"username":"abc123...40chars"}}]
-```
-
-Save that string — it's your `HUE_API_USER`.
-
-### 3. List your lights to find their IDs
-
-```bash
-curl http://<BRIDGE_IP>/api/<HUE_API_USER>/lights | jq 'keys'
-# => ["1", "2"]
-```
-
-The numeric IDs go in `HUE_LIGHT_1`, `HUE_LIGHT_2`, etc.
-
-### 4. Sanity-check by setting a color manually
-
-```bash
-curl -X PUT http://<BRIDGE_IP>/api/<HUE_API_USER>/lights/1/state \
-  -H 'Content-Type: application/json' \
-  -d '{"on":true,"bri":254,"xy":[0.675,0.322]}'
-```
-
-The bulb should flash red. If it does, Hue setup is done.
+Pair with the bridge and mint a local API user — see [docs/setup-philips-hue.md](docs/setup-philips-hue.md) for the **Philips Hue Bridge (Local CLIP API v1)** walkthrough.
 
 ## Configure & run
 
@@ -146,12 +101,12 @@ The current goal sequence is:
 3. **`HoldFinalColorMs`** holding solid red.
 4. Fade to your `RestoreAfterSequence` state (or off).
 
-To change colors for your team, edit `Services/HueClient.cs` — the `HabsRed`, `HabsWhite`, `HabsBlue` static states are CIE xy color coordinates. A few options:
+To change colors for your team, edit `src/NhlGoalLight.Hue/HueLightState.cs` — the `HabsRed`, `HabsWhite`, `HabsBlue` static states are CIE xy color coordinates. A few options:
 
 - Use the Hue Color Picker (e.g., [https://hueapi.colorhexa.com](https://hueapi.colorhexa.com)) to get xy values for your hex codes.
 - Or switch to `Hue`/`Sat` instead of `Xy` to let the bulb do gamut mapping — the existing `GoalGreen` is an example (`Hue=25500, Sat=254`).
 
-The phase durations live in `Services/LightSequencer.cs`. The cadence inside each phase respects `Hue:FlashIntervalMs`.
+The phase durations live in `src/NhlGoalLight.Hue/HueGoalLight.cs`. The cadence inside each phase respects `Hue:FlashIntervalMs`.
 
 ## Preview the lights
 
@@ -174,24 +129,29 @@ This runs once and exits — useful for tweaking colors, timing, and `RestoreAft
 ## Project layout
 
 ```
-NhlGoalLight.sln                     Solution file
+NhlGoalLight.sln
 docker-compose.yml
+.dockerignore
 .env.example
-data/                                Runtime state (volume mount target)
+data/                                  Runtime state (volume mount target)
+docs/setup-philips-hue.md
 src/
-└── NhlGoalLight.Worker/
-    ├── Program.cs                   Host + DI wiring, --preview entry point
-    ├── Configuration/Options.cs     NhlOptions, HueOptions, AppOptions
-    ├── Models/NhlModels.cs          Landing + Schedule API DTOs
-    ├── Services/
-    │   ├── NhlClient.cs             Schedule + landing HTTP w/ ETag conditionals
-    │   ├── HueClient.cs             Hue local CLIP API + team colors
-    │   ├── LightSequencer.cs        Goal celebration choreography
-    │   └── GoalLightService.cs      BackgroundService orchestrator
-    ├── State/PlayStateStore.cs      Score baseline persistence
+├── NhlGoalLight.Abstractions/         IGoalLight contract + AppOptions
+├── NhlGoalLight.Nhl/                  Schedule + landing HTTP, ETag conditionals, NhlOptions
+├── NhlGoalLight.Hue/                  Philips Hue (Local CLIP API v1) integration
+│   ├── HueClient.cs                   Bridge HTTP
+│   ├── HueLightState.cs               Color payload + team color constants
+│   ├── HueGoalLight.cs                IGoalLight implementation (celebration choreography)
+│   └── HueOptions.cs
+└── NhlGoalLight.Worker/               Composition root
+    ├── Program.cs                     Host + DI wiring, --preview entry point
+    ├── Services/GoalLightService.cs   BackgroundService orchestrator (depends on IGoalLight)
+    ├── State/PlayStateStore.cs        Score baseline persistence
     ├── appsettings.json
-    └── Dockerfile                   .NET runtime alpine + tzdata
+    └── Dockerfile                     .NET runtime alpine + tzdata
 ```
+
+Adding a new bulb vendor = new `NhlGoalLight.<Vendor>` project that references `NhlGoalLight.Abstractions` and registers an `IGoalLight`.
 
 ## License
 

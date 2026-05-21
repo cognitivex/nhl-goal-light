@@ -1,6 +1,8 @@
 services:
   nhl-goal-light:
-    build: ./src/NhlGoalLight.Worker
+    build:
+      context: .
+      dockerfile: src/NhlGoalLight.Worker/Dockerfile
     container_name: nhl-goal-light
     restart: unless-stopped
     environment:
