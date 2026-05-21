@@ -6,3 +6,6 @@ obj/
 .env
 data/
 *.log
+.claude/
+.claude-flow/
+.mcp.json
